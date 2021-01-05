@@ -1,11 +1,8 @@
-
 from bs4 import BeautifulSoup
 import requests
 import re
 import json
 import time
-
-all_my_data = []
 
 url = "https://en.wikipedia.org/wiki/List_of_companion_plants"
 
@@ -15,97 +12,36 @@ soup = BeautifulSoup(results_page_html, "html.parser")
 tables = soup.find_all('tbody')
 time.sleep(10)
 
-column_map = {
-	1: "Common name",
-	2: "Scientific name",
-	3: "Helps",
-	4: "Helped by",
-	5: "Attracts",
-	6: "-Repels/+distracts",
-	7: "Avoid",
-	8: "Comments",
+column_map = [ "Common name", "Scientific name", "Helps", "Helped by",
+"Attracts", "-Repels/+distracts", "Avoid", "Comments"]
+
+data_tr = soup.find_all('tr')
+
+data_split = {
+	'vegetables': data_tr[2:44],
+	'fruit': data_tr[46:55],
+	'herbs': data_tr[57:89],
+	'flowers': data_tr[91:111],
+	'other': data_tr[113:116]
 }
 
-data = soup.find_all('tr')
-vegetables = data[1:45]
-# fruit = data[46:56]
-# herbs = data[57:90]
-# flowers = data[91:112]
-# other = data [113:117]
+def export(name):
+	all_my_data = []
 
-for veg in vegetables:
+	for row in data_split[name]:
+		my_data = {}
+		data = row.find_all('td')
 
-	my_data = {}
+		for index, column in enumerate(data):
+			label = column_map[index]
+			my_data[label] = column.text
 
-	data = veg.find_all('td')
+		all_my_data.append(my_data)
 
-	counter = 0
+	with open(f'companion_plants_{name}.json', 'w') as f_object:
+		json.dump(all_my_data, f_object, indent=2)
 
-	for row in data:
-		counter = counter + 1 
-		labels = column_map[counter]
-		table_rows = row.text
-		my_data[labels] = table_rows
-	all_my_data.append(my_data)
+	print(f'Your file companion_plants_{name}.json is now ready')
 
-# for fru in fruit: 
-
-# 	data = fru.find_all('td')
-
-# 	counter = 0
-
-# 	for row in data:
-# 		my_data = {}
-# 		counter = counter + 1 
-# 		labels = column_map[counter]
-# 		table_rows = row.text
-# 		my_data[labels] = table_rows
-
-# for herb in herbs: 
-
-# 	data = herb.find_all('td')
-
-# 	counter = 0
-
-# 	for row in data:
-# 		my_data = {}
-# 		counter = counter + 1 
-# 		labels = column_map[counter]
-# 		table_rows = row.text
-# 		my_data[labels] = table_rows
-
-# for flower in flowers:
-
-# 	data = flower.find_all('td')
-
-# 	counter = 0
-
-# 	for row in data:
-# 		my_data = {}
-# 		counter = counter + 1 
-# 		labels = column_map[counter]
-# 		table_rows = row.text
-# 		my_data[labels] = table_rows
-
-# for oth in other: 
-
-# 	data = oth.find_all('td')
-
-# 	counter = 0
-
-# 	for row in data:
-# 		my_data = {}
-# 		counter = counter + 1 
-# 		labels = column_map[counter]
-# 		table_rows = row.text
-# 		my_data[labels] = table_rows
-
-
-all_my_data.append(my_data)
-print(all_my_data)
-
-with open('companion_plants_veg.json', 'w') as f_object:
-	json.dump(all_my_data, f_object, indent=2)
-	print("Your file is now ready")
-
-
+for name in data_split.keys():
+	export(name)
